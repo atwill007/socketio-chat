@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Socket.IO chat</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font: 13px Helvetica, Arial;
+      }
+      h1 {
+        text-align: center;
+      }
+      form {
+        background: #000;
+        padding: 3px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+      }
+      form input {
+        border: 0;
+        padding: 10px;
+        width: 90%;
+        margin-right: 0.5%;
+      }
+      form button {
+        width: 9%;
+        background: rgb(130, 224, 255);
+        border: none;
+        padding: 10px 0;
+        text-align: center;
+      }
+      #messages {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      #messages li {
+        padding: 5px 10px;
+        display: flex;
+        line-height: 20px;
+        margin-bottom: 8px;
+      }
+      .name {
+        flex: 0 0 30px;
+        color: blue;
+        margin-right: 8px;
+        text-align: center;
+        line-height: 30px;
+      }
+      .msg {
+        flex: 0 0 70%;
+        background: #eee;
+        padding: 5px 10px;
+        border-radius: 6px;
+      }
+      .info {
+        width: 70%;
+        margin: 0 auto;
+        border-radius: 10px;
+        color: #999;
+        background: #f2f2f2;
+        text-align: center;
+      }
+      .mark {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+      }
+      .mark-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 70%;
+        padding: 30px 20px;
+        border-radius: 10px;
+        background: #fff;
+      }
+      .tips {
+        color: rebeccapurple;
+      }
+      .name-input {
+        width: 100%;
+        font-size: 18px;
+        line-height: 1.5;
+        border: 1px solid tomato;
+        padding: 6px 12px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>chat</h1>
+    <div id="app">
+      <ul id="messages">
+        <li v-for="item in msgList" :class="item.class || ''">
+          <span v-if="item.name" class="name">{{ item.name }}</span>
+          <span class="msg">{{ item.msg }}</span>
+        </li>
+      </ul>
+      <form action="" @submit.prevent.stop="submitHandle">
+        <input v-model="inputMsg" autocomplete="off" /><button>Send</button>
+      </form>
+      <template v-if="editName">
+        <div class="mark" @click="confirmName"></div>
+        <div class="mark-content">
+          <input
+            type="text"
+            placeholder="请输入昵称"
+            class="name-input"
+            v-model.trim="name"
+          />
+        </div>
+      </template>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script>
+      const socket = io()
+
+      new Vue({
+        el: '#app',
+        data: {
+          message: 'Hello Vue!',
+          inputMsg: '',
+          msgList: [],
+          newUser: {},
+          users: [],
+          editName: true,
+          name: ''
+        },
+        methods: {
+          submitHandle () {
+            if (!this.inputMsg.trim()) return alert('输入内容不能为空')
+            socket.emit('chatMessage', this.inputMsg)
+            this.inputMsg = ''
+          },
+          showInfo (type, data) {
+            if (!type) return this.msgList.push(data)
+            const { newUserId, users } = data
+            // this.newUser = {id: newUserId, statusStr: type === 'join' ? '加入' : '退出'}
+            // this.users = users
+            this.msgList.push({
+              class: 'info',
+              msg: `${newUserId}${
+                type === 'join' ? '加入' : '退出'
+              }了聊天室, 当前聊天室人数为 ${users.length}`
+            })
+          },
+          confirmName () {
+            if (this.name) {
+              if (this.name.length > 5) return alert('你输入的昵称太长了')
+              this.editName = false
+              socket.emit('editName', this.name)
+              this.msgList.push({
+                class: 'info',
+                msg: `你的昵称是 ${this.name}`
+              })
+            }
+          }
+        },
+        created () {
+          socket.on('chatMessage', data => {
+            console.log('event[chatMessage] data: ', data)
+            this.showInfo('', data)
+          })
+
+          socket.on('join', data => {
+            console.log('event[join] data: ', data)
+            this.showInfo('join', data)
+          })
+
+          socket.on('quit', data => {
+            console.log('event[quit] data: ', data)
+            this.showInfo('quit', data)
+          })
+        }
+      })
+    </script>
+  </body>
+</html>
