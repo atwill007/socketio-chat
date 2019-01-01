@@ -149,12 +149,12 @@
           },
           showInfo (type, data) {
             if (!type) return this.msgList.push(data)
-            const { newUserId, users } = data
-            // this.newUser = {id: newUserId, statusStr: type === 'join' ? '加入' : '退出'}
+            const { name, users } = data
+            // this.newUser = {id: name, statusStr: type === 'join' ? '加入' : '退出'}
             // this.users = users
             this.msgList.push({
               class: 'info',
-              msg: `${newUserId}${
+              msg: `${name}${
                 type === 'join' ? '加入' : '退出'
               }了聊天室, 当前聊天室人数为 ${users.length}`
             })
